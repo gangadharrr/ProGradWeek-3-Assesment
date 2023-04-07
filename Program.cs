@@ -139,8 +139,9 @@ namespace ProGradWeek_3_Assesment
 
             }
         }
-        public void AddScoreBoard(List<string> Data)
+        public void AddOrEditScoreBoard(List<string> Data)
         {
+            //Data list takes sport_id,tournament_id,player_id,score
             string TableName = "SCOREBOARD";
             using (SqlConnection conn = new SqlConnection(connetionString))
             {
@@ -161,15 +162,7 @@ namespace ProGradWeek_3_Assesment
                     cmd.CommandText = $"SELECT PLAYER_NAME FROM PLAYERS WHERE PLAYER_ID={Data[2]}";
                     PlayerName = cmd.ExecuteScalar().ToString();
                 }
-                //ADDING ROW IF DOESNOT EXIST
-                using (SqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = $"INSERT INTO {TableName} (SPORT_ID,SPORT_NAME,TOURNAMENT_ID ,TOURNAMENT_NAME)" +
-                                    $" SELECT {Data[0]},S.SPORT_NAME,{Data[1]},T.TOURNAMENT_NAME FROM SPORTS AS S,TOURNAMENTS AS T " +
-                                       $"WHERE S.SPORT_ID={Data[0]} AND T.TOURNAMENT_ID={Data[1]}";
-
-                    cmd.ExecuteNonQuery();
-                }//ADDING PLAYER AS COLUMN IF DOESNOT EXIST
+                //ADDING PLAYER AS COLUMN IF DOESNOT EXIST
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = $"IF NOT EXISTS(SELECT* FROM INFORMATION_SCHEMA.COLUMNS WHERE  TABLE_NAME = '{TableName}' AND COLUMN_NAME = '{PlayerName}')"
@@ -177,21 +170,22 @@ namespace ProGradWeek_3_Assesment
 
                     cmd.ExecuteNonQuery();
                 }
-                
-                    
-                //ADDING PLAYER SCORE
+                //ADDING ROW IF DOESNOT EXIST
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    
-                    cmd.CommandText = $"UPDATE {TableName} SET {PlayerName}={Data.Last()} WHERE SPORT_ID={Data[0]} AND TOURNAMENT_ID={Data[1]}";
+                    cmd.CommandText = $"IF NOT EXISTS (SELECT* FROM {TableName} WHERE  SPORT_ID = {Data[0]} AND TOURNAMENT_ID = {Data[1]}) "+
+                                    $"BEGIN INSERT INTO {TableName} (SPORT_ID,SPORT_NAME,TOURNAMENT_ID ,TOURNAMENT_NAME,{PlayerName})" +
+                                    $" SELECT {Data[0]},S.SPORT_NAME,{Data[1]},T.TOURNAMENT_NAME,{Data.Last()} FROM SPORTS AS S,TOURNAMENTS AS T " +
+                                       $"WHERE S.SPORT_ID={Data[0]} AND T.TOURNAMENT_ID={Data[1]} END"+
+                                       $" ELSE BEGIN UPDATE {TableName} SET {PlayerName}={Data.Last()} WHERE SPORT_ID={Data[0]} AND TOURNAMENT_ID={Data[1]} END";
+
                     cmd.ExecuteNonQuery();
-                    Console.WriteLine("Updated Successfully");
                 }
 
 
             }
         }
-        
+
         public void RemovePlayers(int ID)
         {
             string TableName = "PLAYERS";
@@ -273,48 +267,18 @@ namespace ProGradWeek_3_Assesment
         public static string connetionString = @"Data Source=5CG9410FJD;Initial Catalog=College Sports Management System;Integrated Security=True;Encrypt=False;";
         static void Main(string[] args)
         {
-
-            /* using (SqlConnection conn = new SqlConnection(connetionString))
-             {
-                 conn.Open();
-                 using (SqlCommand cmd = conn.CreateCommand())
-                 {
-                     cmd.CommandText = "display_details";
-                     cmd.CommandType = CommandType.StoredProcedure;
-
-                     SqlDataReader reader = cmd.ExecuteReader();
-                     while (reader.Read())
-                     {
-                         for (int i = 0; i < reader.FieldCount; i++)
-                         {
-                             Console.Write(reader[i].ToString().Trim() + " ");
-                         }
-                         Console.WriteLine();
-                     }
-                     reader.Close();
-                     Console.WriteLine();
-                     cmd.CommandText = "sortby_column";
-                     cmd.CommandType = CommandType.StoredProcedure;
-                     cmd.Parameters.Add(new SqlParameter("@table_name", "employee"));
-                     cmd.Parameters.Add(new SqlParameter("@column_name", "salary"));
-                     cmd.Parameters.Add(new SqlParameter("@sortby", "desc"));
-                     reader = cmd.ExecuteReader();
-                     while (reader.Read())
-                     {
-                         for (int i = 0; i < reader.FieldCount; i++)
-                         {
-                             Console.Write(reader[i].ToString().Trim() + " ");
-                         }
-                         Console.WriteLine();
-                     }
-                 }
-             }*/
-
             College_Sports_Management_System_DB Db = new College_Sports_Management_System_DB();
-           //Db.AddSports(new List<string>() { "1", "Badminton" });
-            //Db.AddPlayers(new List<string>() { "1", "Player1" });
-            //Db.AddTournament(new List<string>() { "1", "SUMMER_2023" });
-            //Db.AddScoreBoard(new List<string>() { "1", "1","1","35" });
+            Db.AddSports(new List<string>() { "1", "Badminton" });
+            Db.AddPlayers(new List<string>() { "1", "Player1" });
+            Db.AddPlayers(new List<string>() { "2", "Player2" });
+            Db.AddTournament(new List<string>() { "1", "SUMMER_2023" });
+            Db.AddTournament(new List<string>() { "2", "WINTER_2023" });
+            Db.AddOrEditScoreBoard(new List<string>() { "1", "1","1","35" });
+            Db.AddOrEditScoreBoard(new List<string>() { "1", "1","2","35" });
+            Db.AddOrEditScoreBoard(new List<string>() { "1", "1","1","25" });
+            Db.AddOrEditScoreBoard(new List<string>() { "1", "2","1","77" });
+            Db.AddOrEditScoreBoard(new List<string>() { "1", "2","2","55" });
+            Db.AddOrEditScoreBoard(new List<string>() { "1", "2","1","66" });
             Db.RemovePlayers(1);
             Db.RemoveTournament(1);
 
